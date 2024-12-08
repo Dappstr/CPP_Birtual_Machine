@@ -1,0 +1,5 @@
+#+TITLE: C++ Birtual Machine
+
+This is a project based on Tsoding Daily's implementation of a virtual machine, written in C++ unlike Tsoding's which is written in C. All credit goes to him.
+
+This project is currently a work in progress.
