@@ -11,6 +11,7 @@ project(
 add_executable(
     bm
     src/main.cpp
+    src/vm.cpp	
 )
 
 target_include_directories(bm PRIVATE include)
