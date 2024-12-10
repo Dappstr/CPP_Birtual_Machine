@@ -30,6 +30,7 @@ std::string slurp_file(const std::string &file_path) {
 static VM vm{};
 
 int main(int argc, char *argv[]) {
+    
     for (size_t i = 0; i < argc; ++i) {
 
         //  Read in human-readable assembly instructions

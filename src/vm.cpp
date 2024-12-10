@@ -303,6 +303,13 @@ void VM::vm_translate_asm() {
             // std::cout << m_memory.substr(start, i - start) << '\n';
             lines.emplace_back(m_memory.substr(start, i - start));         
             --i;
+        } else {
+            if (m_memory.at(i) == '#') {
+                // Handle comments
+                while (m_memory.at(i) != '\n') {
+                    ++i;
+                }
+            }
         }
     }
 

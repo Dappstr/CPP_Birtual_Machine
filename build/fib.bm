@@ -1,4 +1,5 @@
-push 0 
+# test
+push 0 # Another line test 
 push 1
 dup 1
 dup 1
