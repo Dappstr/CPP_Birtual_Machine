@@ -3,3 +3,7 @@
 This is a project based on Tsoding Daily's implementation of a virtual machine, written in C++ unlike Tsoding's which is written in C. All credit goes to him.
 
 This project is currently a work in progress.
+
+USAGE:
+
+bm -c [FILE_NAME] to compile a file, -o [FILE_NAME] to save to a file, -i [FILE_NAME] to interpret a compiled output file
