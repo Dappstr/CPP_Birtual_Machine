@@ -1,5 +1,6 @@
 #include "../include/vm.hpp"
 #include <cstddef>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -59,13 +60,14 @@ const std::string inst_as_str(const Inst_type &type) {
 
 
 Instruction inst_nop(void) { return Instruction{.type = Inst_type::INST_NOP}; }
-Instruction inst_push(Word operand) { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
-Instruction inst_dup(Word addr) { return Instruction{.type = Inst_type::INST_DUP, .operand = addr}; }
+Instruction inst_push(i64 operand) { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
+Instruction inst_push(f64 operand) { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
+Instruction inst_dup(i64 addr) { return Instruction{.type = Inst_type::INST_DUP, .operand = addr}; }
 Instruction inst_plus(void) { return Instruction{.type = Inst_type::INST_PLUS}; }
 Instruction inst_minus(void) { return Instruction{.type = Inst_type::INST_MINUS }; }
 Instruction inst_mult(void) { return Instruction{.type = Inst_type::INST_MULT}; }
 Instruction inst_div(void) { return Instruction{.type = Inst_type::INST_DIV}; }
-Instruction inst_jmp(Word addr) { return Instruction{.type = Inst_type::INST_JMP, .operand = addr}; }
+Instruction inst_jmp(i64 addr) { return Instruction{.type = Inst_type::INST_JMP, .operand = addr}; }
 Instruction inst_jmp(const std::string &label) { return Instruction{.type = Inst_type::INST_JMP, .operand = label}; }
 Instruction inst_halt(void) { return Instruction{.type = Inst_type::INST_HALT}; }
 
@@ -73,14 +75,14 @@ VM::VM() :m_halt(0), m_ip(0) {}
 
 VM::VM(const std::vector<Instruction> &program) : m_program(program) {}
 
-void VM::set_stack(const std::vector<Word> &stack) { m_stack = stack; }
-const std::vector<Word> VM::get_stack() const { return m_stack; }
+void VM::set_stack(const std::vector<f64> &stack) { m_stack = stack; }
+const std::vector<f64> VM::get_stack() const { return m_stack; }
 
 void VM::set_program(const std::vector<Instruction>& prog) { m_program = prog; }
 const std::vector<Instruction> VM::get_program() const { return m_program; }
 
-void VM::set_ip(const Word val) { m_ip = val; }
-Word VM::get_ip() const { return m_ip; }
+void VM::set_ip(const i64 val) { m_ip = val; }
+i64 VM::get_ip() const { return m_ip; }
 
 void VM::set_memory(const std::string &src) { m_memory = src; }
 const std::string VM::get_memory() const { return m_memory; }
@@ -102,30 +104,36 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
         m_ip += 1;
         break;
     case Inst_type::INST_PUSH: {
-        // vm.stack.at(vm.stack_size++) = inst.operand;
-        Word value = std::get<Word>(inst.operand);
-        m_stack.emplace_back(value);
+        if (std::holds_alternative<i64>(inst.operand)) {
+            i64 value = std::get<i64>(inst.operand);
+            m_stack.emplace_back(value); // Push integer to the stack
+        } else if (std::holds_alternative<f64>(inst.operand)) {
+            f64 value = std::get<f64>(inst.operand);
+            m_stack.emplace_back(value); // Push double to the stack
+        } else {
+            return Trap::TRAP_ILLEGAL_INST; // Invalid operand type
+        }
         m_ip += 1;
         break;
     }
     case Inst_type::INST_DUP: {
-        if (!std::holds_alternative<Word>(inst.operand)) {
-            return Trap::TRAP_ILLEGAL_INST; // Ensure operand is an integer
-        }
-        
-        int operand = std::get<Word>(inst.operand);
-
-        if (m_stack.size() <= static_cast<size_t>(operand)) {
-            return Trap::TRAP_STACK_UNDERFLOW;
-        } else {
-            if (operand < 0) {
-                return Trap::TRAP_ILLEGAL_INST;
-            } else {
-                m_stack.emplace_back(m_stack.at(m_stack.size() - 1 - operand));
-                m_ip += 1;
-            }
-        }
-        break;
+         if (!std::holds_alternative<i64>(inst.operand)) {
+             return Trap::TRAP_ILLEGAL_INST; // Ensure operand is an integer
+         }
+         
+         int operand = std::get<i64>(inst.operand);
+         
+         if (m_stack.size() <= static_cast<size_t>(operand)) {
+             return Trap::TRAP_STACK_UNDERFLOW;
+         } else {
+             if (operand < 0) {
+                 return Trap::TRAP_ILLEGAL_INST;
+             } else {
+                 m_stack.emplace_back(m_stack.at(m_stack.size() - 1 - operand));
+                 m_ip += 1;
+             }
+         }
+         break;
     }
     case Inst_type::INST_PLUS:
         if (m_stack.size() < 2) {
@@ -176,8 +184,8 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
         }
         std::string label = std::get<std::string>(inst.operand);
         /*if (inst.operand >= 0 && inst.operand < m_program.size()) {
-            m_ip = inst.operand;
-            }*/
+          m_ip = inst.operand;
+          }*/
         if (m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
             m_ip = (*m_labels)[label]; // Subscript operator finds the "second" member/value from the corresponding key
         } else {
@@ -241,7 +249,7 @@ void VM::vm_load_program_from_file(const std::string &file_name) {
 
     while (true) {
         std::underlying_type_t<Inst_type> type_val;
-        Word operand;
+        i64 operand;
 
         file.read(reinterpret_cast<char *>(&type_val), sizeof(type_val));
         if (file.eof()) break;
@@ -304,7 +312,16 @@ void VM::vm_translate_asm() {
                 ++i;
             }
             --i;
-        } else if (isalnum(m_memory.at(i)) || m_memory.at(i) == ':') {
+        } else if (isdigit(m_memory.at(i)) || m_memory.at(i) == '.') {
+            // Handle floating-point numbers and integers
+            size_t start = i;
+            while (i < m_memory.size() && (isdigit(m_memory.at(i)) || m_memory.at(i) == '.')) {
+                ++i;
+            }
+            lines.emplace_back(m_memory.substr(start, i - start));
+            --i;
+        } 
+        else if (isalnum(m_memory.at(i)) || m_memory.at(i) == ':') {
             size_t start = i;
             while (i < m_memory.size() && (isalnum(m_memory.at(i)) || m_memory.at(i) == ':')) {
                 ++i;
@@ -337,17 +354,31 @@ void VM::vm_translate_asm() {
                 std::cerr << "Error: 'push' missing operand.\n";
                 exit(1);
             }
-
-            int val{};
-            try {
-                val = std::stoi(lines.at(i + 1));
-            } catch (const std::invalid_argument &e) {
-                std::cerr << "Failed to parse operand for 'push': " << e.what() << '\n';
-                exit(1);
+            
+            i64 i_val{};
+            double d_val{};
+            
+            if (lines.at(i + 1).find('.') != std::string::npos) {
+                try {
+                    d_val = std::stod(lines.at(i+1));
+                } catch (const std::invalid_argument &e) {
+                    std::cerr << "Failed to parse operand for 'push':" << e.what() << '\n';
+                }
+                inst = inst_push(d_val);
+                m_program.emplace_back(inst);
+                ++i;
+            } else {
+                try {
+                    i_val = std::stoi(lines.at(i + 1));
+                } catch (const std::invalid_argument &e) {
+                    std::cerr << "Failed to parse operand for 'push': " << e.what() << '\n';
+                    exit(1);
+                }
+                inst = inst_push(i_val);
+                m_program.emplace_back(inst);
+                ++i;
             }
-            inst = inst_push(val);
-            m_program.emplace_back(inst);
-            ++i;
+            
         } else if (lines[i] == "dup") {
             if (i + 1 >= lines.size()) {
                 std::cerr << "Error: 'dup' missing operand.\n";

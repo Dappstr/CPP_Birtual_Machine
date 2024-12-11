@@ -34,8 +34,9 @@ enum class Inst_type {
     INST_PRINT_DEBUG,
 };
 
-using Word = int64_t;
-using Operand = std::variant<Word, std::string>;
+using i64 = int64_t;
+using f64 = double;
+using Operand = std::variant<i64, f64, std::string>;
 
 struct Instruction {
     Inst_type type;
@@ -45,22 +46,23 @@ struct Instruction {
 const std::string inst_as_str(const Inst_type &type);
 
 Instruction inst_nop(void);
-Instruction inst_push(Word operand);
-Instruction inst_dup(Word addr);
+Instruction inst_push(i64);
+Instruction inst_push(f64);
+Instruction inst_dup(i64);
 Instruction inst_plus(void);
 Instruction inst_minus(void);
 Instruction inst_mult(void);
 Instruction inst_div(void);
-Instruction inst_jmp(Word addr);
+Instruction inst_jmp(i64);
 Instruction inst_jmp(const std::string &);
 Instruction inst_halt(void);
 
 
 class VM {
 private:
-    std::vector<Word> m_stack{};
+    std::vector<f64> m_stack{};
     std::vector<Instruction> m_program{};
-    Word m_ip{}; // Instruction Pointer
+    i64 m_ip{}; // Instruction Pointer
     std::string m_memory{};
     int m_halt{};
     
@@ -69,14 +71,14 @@ public:
     VM ();
     explicit VM(const std::vector<Instruction> &);
 
-    void set_stack(const std::vector<Word>&);
-    const std::vector<Word> get_stack() const;
+    void set_stack(const std::vector<f64>&);
+    const std::vector<f64> get_stack() const;
 
     void set_program(const std::vector<Instruction>&);
     const std::vector<Instruction> get_program() const;
     
-    void set_ip(const Word);
-    Word get_ip() const;
+    void set_ip(const i64);
+    i64 get_ip() const;
     
     void set_memory(const std::string &);
     const std::string get_memory() const;
