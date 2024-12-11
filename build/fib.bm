@@ -1,5 +1,8 @@
 # test
 push 0 # Another line test 
+nop
+nop
+nop
 push 1
 loop:
 dup 1

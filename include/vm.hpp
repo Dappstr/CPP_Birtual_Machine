@@ -44,6 +44,7 @@ struct Instruction {
 
 const std::string inst_as_str(const Inst_type &type);
 
+Instruction inst_nop(void);
 Instruction inst_push(Word operand);
 Instruction inst_dup(Word addr);
 Instruction inst_plus(void);
@@ -53,6 +54,7 @@ Instruction inst_div(void);
 Instruction inst_jmp(Word addr);
 Instruction inst_jmp(const std::string &);
 Instruction inst_halt(void);
+
 
 class VM {
 private:

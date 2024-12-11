@@ -58,7 +58,7 @@ const std::string inst_as_str(const Inst_type &type) {
 }
 
 
-
+Instruction inst_nop(void) { return Instruction{.type = Inst_type::INST_NOP}; }
 Instruction inst_push(Word operand) { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
 Instruction inst_dup(Word addr) { return Instruction{.type = Inst_type::INST_DUP, .operand = addr}; }
 Instruction inst_plus(void) { return Instruction{.type = Inst_type::INST_PLUS}; }
@@ -329,6 +329,9 @@ void VM::vm_translate_asm() {
             // Handle label definition
             std::string label = lines[i].substr(0, lines[i].size() - 1);
             (*m_labels)[label] = m_program.size(); // Map label to current instruction index
+        } else if (lines[i] == "nop") {
+            inst = inst_nop();
+            m_program.emplace_back(inst);
         } else if (lines[i] == "push") {
             if (i + 1 >= lines.size()) {
                 std::cerr << "Error: 'push' missing operand.\n";
