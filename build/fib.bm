@@ -1,7 +1,8 @@
 # test
 push 0 # Another line test 
 push 1
+loop:
 dup 1
 dup 1
 plus
-jmp 2
+jmp loop

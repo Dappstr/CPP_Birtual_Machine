@@ -51,6 +51,8 @@ int main(int argc, char *argv[]) {
             vm.vm_save_program_to_file(argv[i + 1]);
         }
     }
+
+    //vm.vm_get_labels();
     
     for (size_t i = 0; i < 69 && !vm.get_halt(); ++i) {
         if (vm.get_program().empty()) {
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
     }
-
+    
     // vm_dump_stack(vm);
     vm.vm_dump_stack();
     return EXIT_SUCCESS;

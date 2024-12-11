@@ -1,8 +1,12 @@
 #pragma once
 
 #include <cstdint>
+#include <unordered_map>
+#include <variant>
 #include <vector>
 #include <string>
+#include <optional>
+#include <unordered_map>
 
 enum class Trap {
     TRAP_OK = 0,
@@ -31,22 +35,24 @@ enum class Inst_type {
 };
 
 using Word = int64_t;
+using Operand = std::variant<Word, std::string>;
 
 struct Instruction {
     Inst_type type;
-    Word operand;
+    Operand operand;
 };
 
 const std::string inst_as_str(const Inst_type &type);
 
-constexpr Instruction inst_push(Word operand);
-constexpr Instruction inst_dup(Word addr);
-constexpr Instruction inst_plus(void);
-constexpr Instruction inst_minus(void);
-constexpr Instruction inst_mult(void);
-constexpr Instruction inst_div(void);
-constexpr Instruction inst_jmp(Word addr);
-constexpr Instruction inst_halt(void);
+Instruction inst_push(Word operand);
+Instruction inst_dup(Word addr);
+Instruction inst_plus(void);
+Instruction inst_minus(void);
+Instruction inst_mult(void);
+Instruction inst_div(void);
+Instruction inst_jmp(Word addr);
+Instruction inst_jmp(const std::string &);
+Instruction inst_halt(void);
 
 class VM {
 private:
@@ -55,7 +61,8 @@ private:
     Word m_ip{}; // Instruction Pointer
     std::string m_memory{};
     int m_halt{};
-
+    
+    std::optional<std::unordered_map<std::string, int>> m_labels{};
 public:
     VM ();
     explicit VM(const std::vector<Instruction> &);
@@ -81,5 +88,6 @@ public:
     void vm_load_program_from_file(const std::string &);
     void vm_save_program_to_file(const std::string &);
     void vm_translate_asm();
+    void vm_parse_labels(const std::vector<std::string> &);
     void vm_dump_stack();
 };
