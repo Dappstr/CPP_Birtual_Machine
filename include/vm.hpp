@@ -23,6 +23,7 @@ enum class Inst_type {
     INST_NOP,
     INST_PUSH,
     INST_DUP,
+    INST_SWAP,
     INST_PLUS,
     INST_MINUS,
     INST_MULT,
@@ -31,6 +32,7 @@ enum class Inst_type {
     INST_JMP_IF,
     INST_EQ,
     INST_HALT,
+    INST_NOT,
     INST_PRINT_DEBUG,
 };
 
@@ -48,6 +50,7 @@ const std::string inst_as_str(const Inst_type &type);
 Instruction inst_nop(void);
 Instruction inst_push(i64);
 Instruction inst_push(f64);
+Instruction inst_swap(i64);
 Instruction inst_dup(i64);
 Instruction inst_plus(void);
 Instruction inst_minus(void);
@@ -55,8 +58,9 @@ Instruction inst_mult(void);
 Instruction inst_div(void);
 Instruction inst_jmp(i64);
 Instruction inst_jmp(const std::string &);
+Instruction inst_jmp_if(const std::string&);
 Instruction inst_halt(void);
-
+Instruction inst_not(void);
 
 class VM {
 private:
