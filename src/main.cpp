@@ -38,7 +38,8 @@ int main(int argc, char *argv[]) {
             std::string src = slurp_file(argv[i + 1]);
             vm.set_memory(src);
             vm.vm_translate_asm();
-            vm.set_ip(0);
+            vm.set_ip(vm.get_label_loc("start"));
+            //vm.set_ip(0);
         }
         // Load in precompiled instructions
         if (strcmp(argv[i], "-i") == 0) {

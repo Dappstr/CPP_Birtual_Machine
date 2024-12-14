@@ -23,6 +23,7 @@ enum class Inst_type {
     INST_NOP,
     INST_PUSH,
     INST_DUP,
+    INST_DROP,
     INST_SWAP,
     INST_PLUS,
     INST_MINUS,
@@ -33,6 +34,8 @@ enum class Inst_type {
     INST_EQ,
     INST_HALT,
     INST_NOT,
+    INST_RET,
+    INST_CALL,
     INST_PRINT_DEBUG,
 };
 
@@ -47,20 +50,23 @@ struct Instruction {
 
 const std::string inst_as_str(const Inst_type &type);
 
-Instruction inst_nop(void);
-Instruction inst_push(i64);
-Instruction inst_push(f64);
-Instruction inst_swap(i64);
-Instruction inst_dup(i64);
-Instruction inst_plus(void);
-Instruction inst_minus(void);
-Instruction inst_mult(void);
-Instruction inst_div(void);
-Instruction inst_jmp(i64);
-Instruction inst_jmp(const std::string &);
-Instruction inst_jmp_if(const std::string&);
-Instruction inst_halt(void);
-Instruction inst_not(void);
+[[nodiscard]] Instruction inst_nop(void);
+[[nodiscard]] Instruction inst_push(i64);
+[[nodiscard]] Instruction inst_push(f64);
+[[nodiscard]] Instruction inst_swap(i64);
+[[nodiscard]] Instruction inst_dup(i64);
+[[nodiscard]] Instruction inst_drop(void);
+[[nodiscard]] Instruction inst_plus(void);
+[[nodiscard]] Instruction inst_minus(void);
+[[nodiscard]] Instruction inst_mult(void);
+[[nodiscard]] Instruction inst_div(void);
+[[nodiscard]] Instruction inst_jmp(i64);
+[[nodiscard]] Instruction inst_jmp(const std::string &);
+[[nodiscard]] Instruction inst_jmp_if(const std::string&);
+[[nodiscard]] Instruction inst_halt(void);
+[[nodiscard]] Instruction inst_not(void);
+[[nodiscard]] Instruction inst_ret(void);
+[[nodiscard]] Instruction inst_call(const std::string &);
 
 class VM {
 private:
@@ -69,26 +75,30 @@ private:
     i64 m_ip{}; // Instruction Pointer
     std::string m_memory{};
     int m_halt{};
-    
+
     std::optional<std::unordered_map<std::string, int>> m_labels{};
+    std::vector<i64> m_call_stack{};
+    
 public:
     VM ();
     explicit VM(const std::vector<Instruction> &);
 
-    void set_stack(const std::vector<f64>&);
-    const std::vector<f64> get_stack() const;
+    void set_stack(const std::vector<f64>&) &;
+    const std::vector<f64> get_stack() const&;
 
-    void set_program(const std::vector<Instruction>&);
-    const std::vector<Instruction> get_program() const;
+    void set_program(const std::vector<Instruction>&) &;
+    const std::vector<Instruction> get_program() const&;
     
-    void set_ip(const i64);
-    i64 get_ip() const;
+    void set_ip(const i64) &;
+    i64 get_ip() const&;
     
-    void set_memory(const std::string &);
-    const std::string get_memory() const;
+    void set_memory(const std::string &) &;
+    const std::string get_memory() const&;
 
-    void set_halt(int);
-    const int get_halt() const;
+    void set_halt(int) &;
+    const int get_halt() const&;
+
+    i64 get_label_loc(const std::string &) &;
     
     void vm_push_inst(const Instruction &);
     Trap vm_execute_inst(const Instruction &);
