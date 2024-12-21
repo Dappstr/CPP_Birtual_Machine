@@ -1,6 +1,5 @@
 #include <cassert>
 #include <cstddef>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -9,7 +8,7 @@
 #include <vector>
 #include "../include/vm.hpp"
 
-std::string slurp_file(const std::string &file_path) {
+[[nodiscard]] std::string slurp_file(const std::string &file_path) {
     std::fstream file(file_path, std::ios::in);
 
     file.seekg(0, std::ios::end);
@@ -21,7 +20,7 @@ std::string slurp_file(const std::string &file_path) {
         exit(1);
     } else {
         std::string contents(file_size, '\0');
-        file.read(&contents[0], file_size);
+        file.read(&contents[0], static_cast<long long>(file_size));
         file.close();
         return contents;
     }
@@ -52,8 +51,6 @@ int main(int argc, char *argv[]) {
             vm.vm_save_program_to_file(argv[i + 1]);
         }
     }
-
-    //vm.vm_get_labels();
     
     for (size_t i = 0; i < 69 && !vm.get_halt(); ++i) {
         if (vm.get_program().empty()) {

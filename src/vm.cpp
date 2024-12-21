@@ -10,7 +10,7 @@
 #include <fstream>
 #include <cassert>
 
-const std::string trap_as_str(Trap trap) {
+const std::string trap_as_str(Trap trap) noexcept {
     switch (trap) {
     case Trap::TRAP_OK:
         return "TRAP_OK";
@@ -29,7 +29,7 @@ const std::string trap_as_str(Trap trap) {
     }
 }
 
-const std::string inst_as_str(const Inst_type &type) {
+const std::string inst_as_str(const Inst_type &type) noexcept {
     switch (type) {
     case Inst_type::INST_NOP:
         return "INST_NOP";
@@ -70,23 +70,23 @@ const std::string inst_as_str(const Inst_type &type) {
 }
 
 
-Instruction inst_nop(void) { return Instruction{.type = Inst_type::INST_NOP}; }
-Instruction inst_push(i64 operand) { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
-Instruction inst_push(f64 operand) { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
-Instruction inst_swap(i64 operand) { return Instruction{.type = Inst_type::INST_SWAP, .operand = operand}; }
-Instruction inst_dup(i64 addr) { return Instruction{.type = Inst_type::INST_DUP, .operand = addr}; }
-Instruction inst_drop(void) { return Instruction{.type = Inst_type::INST_DROP}; }
-Instruction inst_plus(void) { return Instruction{.type = Inst_type::INST_PLUS}; }
-Instruction inst_minus(void) { return Instruction{.type = Inst_type::INST_MINUS }; }
-Instruction inst_mult(void) { return Instruction{.type = Inst_type::INST_MULT}; }
-Instruction inst_div(void) { return Instruction{.type = Inst_type::INST_DIV}; }
-Instruction inst_jmp(i64 addr) { return Instruction{.type = Inst_type::INST_JMP, .operand = addr}; }
-Instruction inst_jmp(const std::string &label) { return Instruction{.type = Inst_type::INST_JMP, .operand = label}; }
-Instruction inst_jmp_if(const std::string &operand) { return Instruction{.type = Inst_type::INST_JMP_IF, .operand = operand}; }
-Instruction inst_halt(void) { return Instruction{.type = Inst_type::INST_HALT}; }
-Instruction inst_not(void) { return Instruction{.type = Inst_type::INST_NOT}; }
-Instruction inst_ret(void) { return Instruction{.type = Inst_type::INST_RET}; }
-Instruction inst_call(const std::string &f) { return Instruction{.type = Inst_type::INST_CALL, .operand = f};}
+Instruction inst_nop() noexcept { return Instruction{.type = Inst_type::INST_NOP}; }
+Instruction inst_push(i64 operand) noexcept { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
+Instruction inst_push(f64 operand) noexcept { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
+Instruction inst_swap(i64 operand) noexcept { return Instruction{.type = Inst_type::INST_SWAP, .operand = operand}; }
+Instruction inst_dup(i64 addr) noexcept { return Instruction{.type = Inst_type::INST_DUP, .operand = addr}; }
+Instruction inst_drop() noexcept { return Instruction{.type = Inst_type::INST_DROP}; }
+Instruction inst_plus() noexcept { return Instruction{.type = Inst_type::INST_PLUS}; }
+Instruction inst_minus() noexcept { return Instruction{.type = Inst_type::INST_MINUS }; }
+Instruction inst_mult() noexcept { return Instruction{.type = Inst_type::INST_MULT}; }
+Instruction inst_div() noexcept { return Instruction{.type = Inst_type::INST_DIV}; }
+Instruction inst_jmp(i64 addr) noexcept { return Instruction{.type = Inst_type::INST_JMP, .operand = addr}; }
+Instruction inst_jmp(const std::string &label) noexcept { return Instruction{.type = Inst_type::INST_JMP, .operand = label}; }
+Instruction inst_jmp_if(const std::string &operand) noexcept { return Instruction{.type = Inst_type::INST_JMP_IF, .operand = operand}; }
+Instruction inst_halt() noexcept { return Instruction{.type = Inst_type::INST_HALT}; }
+Instruction inst_not() noexcept { return Instruction{.type = Inst_type::INST_NOT}; }
+Instruction inst_ret() noexcept { return Instruction{.type = Inst_type::INST_RET}; }
+Instruction inst_call(const std::string &f) noexcept { return Instruction{.type = Inst_type::INST_CALL, .operand = f};}
 
 VM::VM() :m_halt(0), m_ip(0) {}
 
@@ -143,10 +143,8 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
          if (!std::holds_alternative<i64>(inst.operand)) {
              return Trap::TRAP_ILLEGAL_INST; // Ensure operand is an integer
          }
-         
-         int operand = std::get<i64>(inst.operand);
-         
-         if (m_stack.size() <= static_cast<size_t>(operand)) {
+
+         if (const i64 operand = std::get<i64>(inst.operand); m_stack.size() <= static_cast<size_t>(operand)) {
              return Trap::TRAP_STACK_UNDERFLOW;
          } else {
              if (operand < 0) {
@@ -169,7 +167,7 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
             std::cout << "SWAP";
             return Trap::TRAP_STACK_UNDERFLOW;
         }
-        i64 oper = std::get<i64>(inst.operand);
+        const i64 oper = std::get<i64>(inst.operand);
         std::swap(m_stack.at(m_stack.size() - 1),
                   m_stack.at(m_stack.size() - 1 - oper));
         m_ip += 1;
@@ -199,7 +197,6 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
         
     case Inst_type::INST_MULT:
         if (m_stack.size() < 2) {
-            std::cout << "MULT!";
             return Trap::TRAP_STACK_UNDERFLOW;
         } else {
             m_stack.at(m_stack.size() - 2) *= m_stack.at(m_stack.size() - 1);
@@ -210,7 +207,6 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
         
     case Inst_type::INST_DIV:
         if (m_stack.size() < 2) {
-            std::cout << "DIV!";
             return Trap::TRAP_STACK_UNDERFLOW;
         } else {
             if (m_stack.at(m_stack.size() - 1) == 0) {
@@ -226,11 +222,7 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
         if (!std::holds_alternative<std::string>(inst.operand)) {
             return Trap::TRAP_ILLEGAL_INST;
         }
-        std::string label = std::get<std::string>(inst.operand);
-        /*if (inst.operand >= 0 && inst.operand < m_program.size()) {
-          m_ip = inst.operand;
-          }*/
-        if (m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
+        if (auto label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
             m_ip = (*m_labels)[label]; // Subscript operator finds the "second" member/value from the corresponding key
         } else {
             return Trap::TRAP_ILLEGAL_INST_ACCESS;
@@ -240,10 +232,8 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
     case Inst_type::INST_EQ:
         if (m_stack.size() < 2) {
             return Trap::TRAP_STACK_UNDERFLOW;
-            std::cout << "EQ";
         } else {
-            m_stack.at(m_stack.size() - 2) = m_stack.at(m_stack.size() - 1) ==
-                m_stack.at(m_stack.size() - 2);
+            m_stack.at(m_stack.size() - 2) = m_stack.at(m_stack.size() - 1) == m_stack.at(m_stack.size() - 2);
             m_stack.pop_back();
             m_ip += 1;
         }
@@ -251,17 +241,15 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
 
     case Inst_type::INST_JMP_IF: {
         if (m_stack.empty()) {
-            std::cout << "JMP_IF!";
             return Trap::TRAP_STACK_UNDERFLOW;
         }
 
         // Pop the top element of the stack
-        i64 cond = static_cast<i64>(m_stack.back());
+        const i64 cond = static_cast<i64>(m_stack.back());
         m_stack.pop_back();
         
         if (cond != 0) { // Jump if the condition is true
-            const std::string &label = std::get<std::string>(inst.operand);
-            if (m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
+            if (const auto &label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
                 m_ip = (*m_labels)[label]; // Set IP to the label's instruction
                 break; // Exit this case without further processing
             } else {
@@ -274,8 +262,7 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
     }
 
     case Inst_type::INST_NOT:
-        if (m_stack.size() < 1) {
-            std::cout << "NOT";
+        if (m_stack.empty()) {
             return Trap::TRAP_STACK_UNDERFLOW;
         }
         m_stack.back() = !m_stack.back();
@@ -296,8 +283,7 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
             return Trap::TRAP_ILLEGAL_INST;
         }
 
-        const std::string &label = std::get<std::string>(inst.operand);
-        if (m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
+        if (const auto &label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
             m_call_stack.emplace_back(m_ip + 1);  // Save the next instruction pointer
             m_ip = (*m_labels)[label];  // Jump to the function
         } else {
@@ -307,7 +293,6 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
     }
     case Inst_type::INST_PRINT_DEBUG:
         if (m_stack.size() < 1) {
-            std::cout << "DEBUG!";
             return Trap::TRAP_STACK_UNDERFLOW;
         } else {
             std::cout << m_stack.at(m_stack.size() - 1) << '\n';
@@ -359,11 +344,8 @@ void VM::vm_load_program_from_file(const std::string &file_name) {
             break;
         }
 
-        Inst_type inst_type = static_cast<Inst_type>(type_val);
+        auto inst_type = static_cast<Inst_type>(type_val);
         m_program.emplace_back(Instruction{.type = inst_type, .operand = operand});
-
-        // Debug loaded instruction
-        //std::cout << "Loaded: " << inst_as_str(inst_type) << " " << operand << '\n';
     }
 
     file.close();
@@ -564,9 +546,9 @@ void VM::vm_translate_asm() {
 }
 
 
-void VM::vm_dump_stack() {
+void VM::vm_dump_stack() const {
     std::cout << "Stack:\n";
-    if(m_stack.size() > 0) {
+    if(!m_stack.empty()) {
         for (size_t i = 0; i < m_stack.size(); ++i) {
             std::cout << "  " << m_stack.at(i) << '\n';
         }

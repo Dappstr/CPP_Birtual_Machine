@@ -17,7 +17,7 @@ enum class Trap {
     TRAP_ILLEGAL_INST_ACCESS,
 };
 
-const std::string trap_as_str(Trap trap);
+const std::string trap_as_str(Trap trap) noexcept;
 
 enum class Inst_type {
     INST_NOP,
@@ -48,27 +48,27 @@ struct Instruction {
     Operand operand;
 };
 
-const std::string inst_as_str(const Inst_type &type);
+const std::string inst_as_str(const Inst_type &type) noexcept;
 
-[[nodiscard]] Instruction inst_nop(void);
-[[nodiscard]] Instruction inst_push(i64);
-[[nodiscard]] Instruction inst_push(f64);
-[[nodiscard]] Instruction inst_swap(i64);
-[[nodiscard]] Instruction inst_dup(i64);
-[[nodiscard]] Instruction inst_drop(void);
-[[nodiscard]] Instruction inst_plus(void);
-[[nodiscard]] Instruction inst_minus(void);
-[[nodiscard]] Instruction inst_mult(void);
-[[nodiscard]] Instruction inst_div(void);
-[[nodiscard]] Instruction inst_jmp(i64);
-[[nodiscard]] Instruction inst_jmp(const std::string &);
-[[nodiscard]] Instruction inst_jmp_if(const std::string&);
-[[nodiscard]] Instruction inst_halt(void);
-[[nodiscard]] Instruction inst_not(void);
-[[nodiscard]] Instruction inst_ret(void);
-[[nodiscard]] Instruction inst_call(const std::string &);
+[[nodiscard]] Instruction inst_nop() noexcept ;
+[[nodiscard]] Instruction inst_push(i64) noexcept ;
+[[nodiscard]] Instruction inst_push(f64) noexcept ;
+[[nodiscard]] Instruction inst_swap(i64) noexcept ;
+[[nodiscard]] Instruction inst_dup(i64) noexcept;
+[[nodiscard]] Instruction inst_drop() noexcept;
+[[nodiscard]] Instruction inst_plus() noexcept;
+[[nodiscard]] Instruction inst_minus() noexcept;
+[[nodiscard]] Instruction inst_mult() noexcept;
+[[nodiscard]] Instruction inst_div() noexcept;
+[[nodiscard]] Instruction inst_jmp(i64) noexcept;
+[[nodiscard]] Instruction inst_jmp(const std::string &) noexcept;
+[[nodiscard]] Instruction inst_jmp_if(const std::string&) noexcept;
+[[nodiscard]] Instruction inst_halt() noexcept;
+[[nodiscard]] Instruction inst_not() noexcept;
+[[nodiscard]] Instruction inst_ret() noexcept;
+[[nodiscard]] Instruction inst_call(const std::string &) noexcept;
 
-class VM {
+class VM final {
 private:
     std::vector<f64> m_stack{};
     std::vector<Instruction> m_program{};
@@ -107,5 +107,5 @@ public:
     void vm_save_program_to_file(const std::string &);
     void vm_translate_asm();
     void vm_parse_labels(const std::vector<std::string> &);
-    void vm_dump_stack();
+    void vm_dump_stack() const;
 };
