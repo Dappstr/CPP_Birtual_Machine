@@ -400,10 +400,14 @@ void VM::vm_translate_asm() {
             }
             lines.emplace_back(m_memory.substr(start, i - start));
             --i;
-        } else if (m_memory.at(i) == '#') {
+        } else if (m_memory.at(i) == ';') {
             while (i < m_memory.size() && m_memory.at(i) != '\n') {
                 ++i;
             }
+        } else if (m_memory.at(i) == '#') {
+            std::string hash;
+            hash.push_back(m_memory.at(i));
+            lines.emplace_back(hash);
         }
     }
 
@@ -417,43 +421,76 @@ void VM::vm_translate_asm() {
         m_labels = std::unordered_map<std::string, int>{};
     }
 
+    if (!m_macros.has_value()) {
+        m_macros = std::unordered_map<std::string, std::variant<int, double, std::string>>{};
+    }
+
     Instruction inst;
     for (size_t i = 0; i < lines.size(); ++i) {
         if (lines[i].back() == ':') {
             std::string label = lines[i].substr(0, lines[i].size() - 1);
             (*m_labels)[label] = m_program.size();
             continue;
+        } else if (lines[i] == "#") {
+            if (i + 3 >= lines.size() || lines[i + 1] != "define") {
+                std::cerr << "Error: Invalid macro definition. Expected format: # define MACRO_NAME VALUE\n";
+                exit(1);
+            }
+            const std::string &macro_name = lines[i + 2];
+            const std::string &macro_value = lines[i + 3];
+            ++i; // For skipping 'define'
+
+            if (isdigit(macro_value[0]) || macro_value[0] == '-') {
+                if (macro_value.find('.') != std::string::npos) {
+                    (*m_macros)[macro_name] = std::stod(macro_value);
+                } else {
+                    (*m_macros)[macro_name] = std::stoi(macro_value);
+                }
+            } else {
+                (*m_macros)[macro_name] = macro_value;
+            }
+            i += 2;
         } else if (lines[i] == "nop") {
             inst = inst_nop();
             m_program.emplace_back(inst);
-        } else if (lines[i] == "push") {
+        }else if (lines[i] == "push") {
             if (i + 1 >= lines.size()) {
                 std::cerr << "Error: 'push' missing operand.\n";
                 exit(1);
             }
 
-            i64 i_val{};
-            double d_val{};
-
-            if (lines.at(i + 1).find('.') != std::string::npos) {
-                try {
-                    d_val = std::stod(lines.at(i + 1));
-                } catch (const std::invalid_argument &e) {
-                    std::cerr << "Failed to parse operand for 'push': " << e.what() << '\n';
+            // Check if the operand is a macro
+            const std::string &operand = lines[i + 1];
+            if (m_macros.has_value() && m_macros->find(operand) != m_macros->end()) {
+                const auto &macro_value = (*m_macros)[operand];
+                if (std::holds_alternative<int>(macro_value)) {
+                    inst = inst_push(static_cast<i64>(std::get<int>(macro_value))); // Use std::get<int>
+                } else if (std::holds_alternative<double>(macro_value)) {
+                    inst = inst_push(std::get<double>(macro_value));
+                } else {
+                    std::cerr << "Error: Macro '" << operand << "' cannot be used as a numeric operand for 'push'.\n";
                     exit(1);
                 }
-                inst = inst_push(d_val);
             } else {
-                try {
-                    i_val = static_cast<i64>(std::stoi(lines.at(i + 1))); // Explicit cast to i64
-                } catch (const std::invalid_argument &e) {
-                    std::cerr << "Failed to parse operand for 'push': " << e.what() << '\n';
-                    exit(1);
+                // Handle direct numeric values
+                if (operand.find('.') != std::string::npos) {
+                    try {
+                        inst = inst_push(std::stod(operand));
+                    } catch (const std::invalid_argument &) {
+                        std::cerr << "Error: Invalid floating-point value for 'push': " << operand << '\n';
+                        exit(1);
+                    }
+                } else {
+                    try {
+                        inst = inst_push(static_cast<i64>(std::stoi(operand))); // Use std::stoi and cast to i64
+                    } catch (const std::invalid_argument &) {
+                        std::cerr << "Error: Invalid integer value for 'push': " << operand << '\n';
+                        exit(1);
+                    }
                 }
-                inst = inst_push(i_val);
             }
             m_program.emplace_back(inst);
-            ++i;
+            ++i; // Skip the operand
         } else if (lines[i] == "swap") {
             int operand{};
             try {

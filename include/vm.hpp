@@ -76,9 +76,11 @@ private:
     std::string m_memory{};
     int m_halt{};
 
-    std::optional<std::unordered_map<std::string, int>> m_labels{};
+    std::optional<std::unordered_map<std::string, int>> m_labels{}; // Label name (string) and position in file (int)
     std::vector<i64> m_call_stack{};
-    
+
+    std::optional<std::unordered_map<std::string, std::variant<int, double, std::string>>> m_macros{};
+
 public:
     VM ();
     explicit VM(const std::vector<Instruction> &);
