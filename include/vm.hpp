@@ -36,12 +36,17 @@ enum class Inst_type {
     INST_NOT,
     INST_RET,
     INST_CALL,
+    INST_XOR,
+    INST_AND,
+    INST_OR,
+    INST_SHL,
+    INST_SHR,
     INST_PRINT_DEBUG,
 };
 
 using i64 = int64_t;
 using f64 = double;
-using Operand = std::variant<i64, f64, std::string>;
+using Operand = std::variant<i64, f64, std::string, std::pair<i64, i64>>;
 
 struct Instruction {
     Inst_type type;
@@ -67,6 +72,11 @@ const std::string inst_as_str(const Inst_type &type) noexcept;
 [[nodiscard]] Instruction inst_not() noexcept;
 [[nodiscard]] Instruction inst_ret() noexcept;
 [[nodiscard]] Instruction inst_call(const std::string &) noexcept;
+[[nodiscard]] Instruction inst_xor() noexcept;
+[[nodiscard]] Instruction inst_and() noexcept;
+[[nodiscard]] Instruction inst_or() noexcept;
+[[nodiscard]] Instruction inst_shl(i64, i64) noexcept; // Shift index left by amount
+[[nodiscard]] Instruction inst_shr(i64, i64) noexcept; // Shift index right by amount
 
 class VM final {
 private:
@@ -91,7 +101,7 @@ public:
     void set_program(const std::vector<Instruction>&) &;
     const std::vector<Instruction> get_program() const&;
     
-    void set_ip(const i64) &;
+    void set_ip(i64) &;
     i64 get_ip() const&;
     
     void set_memory(const std::string &) &;

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <limits>
 
 const std::string trap_as_str(Trap trap) noexcept {
     switch (trap) {
@@ -31,44 +32,53 @@ const std::string trap_as_str(Trap trap) noexcept {
 
 const std::string inst_as_str(const Inst_type &type) noexcept {
     switch (type) {
-    case Inst_type::INST_NOP:
-        return "INST_NOP";
-    case Inst_type::INST_PUSH:
-        return "INST_PUSH";
-    case Inst_type::INST_DUP:
-        return "INST_DUP";
-    case Inst_type::INST_SWAP:
-        return "INST_SWAP";
-    case Inst_type::INST_PLUS:
-        return "INST_PLUS";
-    case Inst_type::INST_MINUS:
-        return "INST_TYPE_MINUS";
-    case Inst_type::INST_MULT:
-        return "INST_TYPE_MULT";
-    case Inst_type::INST_DIV:
-        return "INST_TYPE_DIV";
-    case Inst_type::INST_JMP:
-        return "INST_TYPE_JMP";
-    case Inst_type::INST_JMP_IF:
-      return "INST_JMP_IF";
-    case Inst_type::INST_EQ:
-        return "INST_EQUAL";
-    case Inst_type::INST_HALT:
-        return "INST_TYPE_HALT";
-    case Inst_type::INST_NOT:
-        return "INST_NOT";
-    case Inst_type::INST_RET:
-        return "INST_RET";
-    case Inst_type::INST_CALL:
-        return "INST_CALL";
-    case Inst_type::INST_PRINT_DEBUG:
-        return "INST_TYPE_PRINT_DEBUG";
-    default:
-        assert(0 && "inst_as_str() Unreachable");
-        return "Unreachable";
+        case Inst_type::INST_NOP:
+            return "INST_NOP";
+        case Inst_type::INST_PUSH:
+            return "INST_PUSH";
+        case Inst_type::INST_DUP:
+            return "INST_DUP";
+        case Inst_type::INST_SWAP:
+            return "INST_SWAP";
+        case Inst_type::INST_PLUS:
+            return "INST_PLUS";
+        case Inst_type::INST_MINUS:
+            return "INST_TYPE_MINUS";
+        case Inst_type::INST_MULT:
+            return "INST_TYPE_MULT";
+        case Inst_type::INST_DIV:
+            return "INST_TYPE_DIV";
+        case Inst_type::INST_JMP:
+            return "INST_TYPE_JMP";
+        case Inst_type::INST_JMP_IF:
+          return "INST_JMP_IF";
+        case Inst_type::INST_EQ:
+            return "INST_EQUAL";
+        case Inst_type::INST_HALT:
+            return "INST_TYPE_HALT";
+        case Inst_type::INST_NOT:
+            return "INST_NOT";
+        case Inst_type::INST_RET:
+            return "INST_RET";
+        case Inst_type::INST_CALL:
+            return "INST_CALL";
+        case Inst_type::INST_OR:
+            return "INST_OR";
+        case Inst_type::INST_AND:
+            return "INST_AND";
+        case Inst_type::INST_XOR:
+            return "INST_XOR";
+        case Inst_type::INST_SHL:
+            return "INST_SHL";
+        case Inst_type::INST_SHR:
+            return "INST_SHR";
+        case Inst_type::INST_PRINT_DEBUG:
+            return "INST_TYPE_PRINT_DEBUG";
+        default:
+            assert(0 && "inst_as_str() Unreachable");
+            return "Unreachable";
     }
 }
-
 
 Instruction inst_nop() noexcept { return Instruction{.type = Inst_type::INST_NOP}; }
 Instruction inst_push(i64 operand) noexcept { return Instruction{.type = Inst_type::INST_PUSH, .operand = operand}; }
@@ -87,8 +97,13 @@ Instruction inst_halt() noexcept { return Instruction{.type = Inst_type::INST_HA
 Instruction inst_not() noexcept { return Instruction{.type = Inst_type::INST_NOT}; }
 Instruction inst_ret() noexcept { return Instruction{.type = Inst_type::INST_RET}; }
 Instruction inst_call(const std::string &f) noexcept { return Instruction{.type = Inst_type::INST_CALL, .operand = f};}
+Instruction inst_xor() noexcept { return Instruction{.type = Inst_type::INST_XOR}; }
+Instruction inst_and() noexcept { return Instruction{.type = Inst_type::INST_AND}; }
+Instruction inst_or() noexcept { return Instruction{.type = Inst_type::INST_OR}; }
+Instruction inst_shl(const i64 index, const i64 shift_amount) noexcept { return Instruction{.type = Inst_type::INST_SHL, .operand = std::make_pair(index, shift_amount)}; }
+Instruction inst_shr(const i64 index, const i64 shift_amount) noexcept { return Instruction{.type = Inst_type::INST_SHR, .operand = std::make_pair(index, shift_amount)}; }
 
-VM::VM() :m_halt(0), m_ip(0) {}
+VM::VM() :m_ip(0), m_halt(0) {}
 
 VM::VM(const std::vector<Instruction> &program) : m_program(program) {}
 
@@ -121,194 +136,285 @@ Trap VM::vm_execute_inst(const Instruction &inst) {
     }
     
     switch (inst.type) {
-    case Inst_type::INST_NOP:
-        m_ip += 1;
-        break;
-
-    case Inst_type::INST_PUSH: {
-        if (std::holds_alternative<i64>(inst.operand)) {
-            i64 value = std::get<i64>(inst.operand);
-            m_stack.emplace_back(value); // Push integer to the stack
-        } else if (std::holds_alternative<f64>(inst.operand)) {
-            f64 value = std::get<f64>(inst.operand);
-            m_stack.emplace_back(value); // Push double to the stack
-        } else {
-            return Trap::TRAP_ILLEGAL_INST; // Invalid operand type
-        }
-        m_ip += 1;
-        break;
-    }
-        
-    case Inst_type::INST_DUP: {
-         if (!std::holds_alternative<i64>(inst.operand)) {
-             return Trap::TRAP_ILLEGAL_INST; // Ensure operand is an integer
-         }
-
-         if (const i64 operand = std::get<i64>(inst.operand); m_stack.size() <= static_cast<size_t>(operand)) {
-             return Trap::TRAP_STACK_UNDERFLOW;
-         } else {
-             if (operand < 0) {
-                 return Trap::TRAP_ILLEGAL_INST;
-             } else {
-                 m_stack.emplace_back(m_stack.at(m_stack.size() - 1 - operand));
-                 m_ip += 1;
-             }
-         }
-         break;
-    }
-
-    case Inst_type::INST_DROP:
-        m_stack.resize(m_stack.size() - 1);
-        m_ip += 1;
-        break;
-
-    case Inst_type::INST_SWAP: {
-        if (m_stack.size() < 2) {
-            std::cout << "SWAP";
-            return Trap::TRAP_STACK_UNDERFLOW;
-        }
-        const i64 oper = std::get<i64>(inst.operand);
-        std::swap(m_stack.at(m_stack.size() - 1),
-                  m_stack.at(m_stack.size() - 1 - oper));
-        m_ip += 1;
-        break;
-    }
-    case Inst_type::INST_PLUS:
-        if (m_stack.size() < 2) {
-            std::cout << "PLUS";
-            return Trap::TRAP_STACK_UNDERFLOW;
-        } else {
-            m_stack.at(m_stack.size() - 2) += m_stack.at(m_stack.size() - 1);
-            m_stack.pop_back();
+        case Inst_type::INST_NOP:
             m_ip += 1;
-        }
-        break;
-        
-    case Inst_type::INST_MINUS:
-        if (m_stack.size() < 2) {
-            std::cout << "MINUS!";
-            return Trap::TRAP_STACK_UNDERFLOW;
-        } else {
-            m_stack.at(m_stack.size() - 2) -= m_stack.at(m_stack.size() - 1);
-            m_stack.pop_back();
-            m_ip += 1;
-        }
-        break;
-        
-    case Inst_type::INST_MULT:
-        if (m_stack.size() < 2) {
-            return Trap::TRAP_STACK_UNDERFLOW;
-        } else {
-            m_stack.at(m_stack.size() - 2) *= m_stack.at(m_stack.size() - 1);
-            m_stack.pop_back();
-            m_ip += 1;
-        }
-        break;
-        
-    case Inst_type::INST_DIV:
-        if (m_stack.size() < 2) {
-            return Trap::TRAP_STACK_UNDERFLOW;
-        } else {
-            if (m_stack.at(m_stack.size() - 1) == 0) {
-                return Trap::TRAP_DIV_BY_ZERO;
+            break;
+
+        case Inst_type::INST_PUSH: {
+            if (std::holds_alternative<i64>(inst.operand)) {
+                i64 value = std::get<i64>(inst.operand);
+                m_stack.emplace_back(value); // Push integer to the stack
+            } else if (std::holds_alternative<f64>(inst.operand)) {
+                f64 value = std::get<f64>(inst.operand);
+                m_stack.emplace_back(value); // Push double to the stack
+            } else {
+                return Trap::TRAP_ILLEGAL_INST; // Invalid operand type
             }
-            m_stack.at(m_stack.size() - 2) /= m_stack.at(m_stack.size() - 1);
-            m_stack.pop_back();
             m_ip += 1;
+            break;
         }
-        break;
 
-    case Inst_type::INST_JMP: {
-        if (!std::holds_alternative<std::string>(inst.operand)) {
-            return Trap::TRAP_ILLEGAL_INST;
+        case Inst_type::INST_DUP: {
+             if (!std::holds_alternative<i64>(inst.operand)) {
+                 return Trap::TRAP_ILLEGAL_INST; // Ensure operand is an integer
+             }
+
+             if (const i64 operand = std::get<i64>(inst.operand); m_stack.size() <= static_cast<size_t>(operand)) {
+                 return Trap::TRAP_STACK_UNDERFLOW;
+             } else {
+                 if (operand < 0) {
+                     return Trap::TRAP_ILLEGAL_INST;
+                 } else {
+                     m_stack.emplace_back(m_stack.at(m_stack.size() - 1 - operand));
+                     m_ip += 1;
+                 }
+             }
+             break;
         }
-        if (auto label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
-            m_ip = (*m_labels)[label]; // Subscript operator finds the "second" member/value from the corresponding key
-        } else {
-            return Trap::TRAP_ILLEGAL_INST_ACCESS;
-        }
-        break;
-    }
-    case Inst_type::INST_EQ:
-        if (m_stack.size() < 2) {
-            return Trap::TRAP_STACK_UNDERFLOW;
-        } else {
-            m_stack.at(m_stack.size() - 2) = m_stack.at(m_stack.size() - 1) == m_stack.at(m_stack.size() - 2);
-            m_stack.pop_back();
+
+        case Inst_type::INST_DROP:
+            m_stack.resize(m_stack.size() - 1);
             m_ip += 1;
-        }
-        break;
+            break;
 
-    case Inst_type::INST_JMP_IF: {
-        if (m_stack.empty()) {
-            return Trap::TRAP_STACK_UNDERFLOW;
+        case Inst_type::INST_SWAP: {
+            if (m_stack.size() < 2) {
+                std::cout << "SWAP";
+                return Trap::TRAP_STACK_UNDERFLOW;
+            }
+            const i64 oper = std::get<i64>(inst.operand);
+            std::swap(m_stack.at(m_stack.size() - 1),
+                      m_stack.at(m_stack.size() - 1 - oper));
+            m_ip += 1;
+            break;
         }
+        case Inst_type::INST_PLUS:
+            if (m_stack.size() < 2) {
+                std::cout << "PLUS";
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                m_stack.at(m_stack.size() - 2) += m_stack.at(m_stack.size() - 1);
+                m_stack.pop_back();
+                m_ip += 1;
+            }
+            break;
 
-        // Pop the top element of the stack
-        const i64 cond = static_cast<i64>(m_stack.back());
-        m_stack.pop_back();
-        
-        if (cond != 0) { // Jump if the condition is true
-            if (const auto &label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
-                m_ip = (*m_labels)[label]; // Set IP to the label's instruction
-                break; // Exit this case without further processing
+        case Inst_type::INST_MINUS:
+            if (m_stack.size() < 2) {
+                std::cout << "MINUS!";
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                m_stack.at(m_stack.size() - 2) -= m_stack.at(m_stack.size() - 1);
+                m_stack.pop_back();
+                m_ip += 1;
+            }
+            break;
+
+        case Inst_type::INST_MULT:
+            if (m_stack.size() < 2) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                m_stack.at(m_stack.size() - 2) *= m_stack.at(m_stack.size() - 1);
+                m_stack.pop_back();
+                m_ip += 1;
+            }
+            break;
+
+        case Inst_type::INST_DIV:
+            if (m_stack.size() < 2) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                if (m_stack.at(m_stack.size() - 1) == 0) {
+                    return Trap::TRAP_DIV_BY_ZERO;
+                }
+                m_stack.at(m_stack.size() - 2) /= m_stack.at(m_stack.size() - 1);
+                m_stack.pop_back();
+                m_ip += 1;
+            }
+            break;
+
+        case Inst_type::INST_JMP: {
+            if (!std::holds_alternative<std::string>(inst.operand)) {
+                return Trap::TRAP_ILLEGAL_INST;
+            }
+            if (auto label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
+                m_ip = (*m_labels)[label]; // Subscript operator finds the "second" member/value from the corresponding key
             } else {
                 return Trap::TRAP_ILLEGAL_INST_ACCESS;
             }
-        } else {
-            m_ip += 1; // Move to the next instruction if the condition is false
+            break;
         }
-        break;
-    }
+        case Inst_type::INST_EQ:
+            if (m_stack.size() < 2) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                m_stack.at(m_stack.size() - 2) = m_stack.at(m_stack.size() - 1) == m_stack.at(m_stack.size() - 2);
+                m_stack.pop_back();
+                m_ip += 1;
+            }
+            break;
 
-    case Inst_type::INST_NOT:
-        if (m_stack.empty()) {
-            return Trap::TRAP_STACK_UNDERFLOW;
-        }
-        m_stack.back() = !m_stack.back();
-        m_ip += 1;
-        break;
-        
-    case Inst_type::INST_RET: {
-        if (m_call_stack.empty()) {
-            return Trap::TRAP_STACK_UNDERFLOW;  // No saved instruction pointer
-        }
-        m_ip = m_call_stack.back();  // Restore the instruction pointer
-        m_call_stack.pop_back();
-        break;
-    }
+        case Inst_type::INST_JMP_IF: {
+            if (m_stack.empty()) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            }
 
-    case Inst_type::INST_CALL: {
-        if (!std::holds_alternative<std::string>(inst.operand)) {
+            // Pop the top element of the stack
+            const i64 cond = static_cast<i64>(m_stack.back());
+            m_stack.pop_back();
+
+            if (cond != 0) { // Jump if the condition is true
+                if (const auto &label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
+                    m_ip = (*m_labels)[label]; // Set IP to the label's instruction
+                    break; // Exit this case without further processing
+                } else {
+                    return Trap::TRAP_ILLEGAL_INST_ACCESS;
+                }
+            } else {
+                m_ip += 1; // Move to the next instruction if the condition is false
+            }
+            break;
+        }
+
+        case Inst_type::INST_NOT:
+            if (m_stack.empty()) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            }
+            m_stack.back() = !m_stack.back();
+            m_ip += 1;
+            break;
+
+        case Inst_type::INST_RET: {
+            if (m_call_stack.empty()) {
+                return Trap::TRAP_STACK_UNDERFLOW;  // No saved instruction pointer
+            }
+            m_ip = m_call_stack.back();  // Restore the instruction pointer
+            m_call_stack.pop_back();
+            break;
+        }
+
+        case Inst_type::INST_CALL: {
+            if (!std::holds_alternative<std::string>(inst.operand)) {
+                return Trap::TRAP_ILLEGAL_INST;
+            }
+            if (const auto &label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
+                m_call_stack.emplace_back(m_ip + 1);  // Save the next instruction pointer
+                m_ip = (*m_labels)[label];  // Jump to the function
+            } else {
+                return Trap::TRAP_ILLEGAL_INST_ACCESS;
+            }
+            break;
+        }
+        case Inst_type::INST_PRINT_DEBUG:
+            if (m_stack.empty()) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                std::cout << m_stack.at(m_stack.size() - 1) << '\n';
+                m_stack.pop_back();
+                m_ip += 1;
+            }
+            break;
+
+        case Inst_type::INST_HALT:
+            m_halt = 1;
+            break;
+
+        case Inst_type::INST_XOR: {
+            if (m_stack.size() < 2) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                const i64 back_1 = static_cast<i64>(m_stack.back());
+                m_stack.pop_back();
+                const i64 back_2 = static_cast<i64>(m_stack.back());
+                m_stack.pop_back();
+                m_stack.emplace_back(back_1 ^ back_2);
+                m_ip += 1;
+                break;
+            }
+        }
+
+        case Inst_type::INST_AND: {
+            if (m_stack.size() < 2) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                const i64 back_1 = static_cast<i64>(m_stack.back());
+                m_stack.pop_back();
+                const i64 back_2 = static_cast<i64>(m_stack.back());
+                m_stack.pop_back();
+                m_stack.emplace_back(back_1 & back_2);
+                m_ip += 1;
+                break;
+            }
+        }
+
+        case Inst_type::INST_OR: {
+            if (m_stack.size() < 2) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                const i64 back_1 = static_cast<i64>(m_stack.back());
+                m_stack.pop_back();
+                const i64 back_2 = static_cast<i64>(m_stack.back());
+                m_stack.pop_back();
+                m_stack.emplace_back(back_1 | back_2);
+                m_ip += 1;
+                break;
+            }
+        }
+
+        case Inst_type::INST_SHL: {
+            if (m_stack.empty()) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                if (!std::holds_alternative<std::pair<i64, i64>>(inst.operand)) {
+                    return Trap::TRAP_ILLEGAL_INST;
+                }
+                else {
+                    auto [index, shift_amount] = std::get<std::pair<i64, i64>>(inst.operand);
+                    if (index < 0 || static_cast<i64>(index) > m_stack.size()) {
+                        return Trap::TRAP_ILLEGAL_INST_ACCESS;
+                    }
+                    f64 &value = m_stack.at(m_stack.size() - index - 1);
+                    if (static_cast<i64>(value) != value) {
+                        return Trap::TRAP_ILLEGAL_INST;
+                    }
+                    else {
+                        value = static_cast<f64>(static_cast<i64>(value) << shift_amount);
+                        m_ip += 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        case Inst_type::INST_SHR: {
+            if (m_stack.empty()) {
+                return Trap::TRAP_STACK_UNDERFLOW;
+            } else {
+                if (!std::holds_alternative<std::pair<i64, i64>>(inst.operand)) {
+                    return Trap::TRAP_ILLEGAL_INST;
+                }
+                else {
+                    auto [index, shift_amount] = std::get<std::pair<i64, i64>>(inst.operand);
+                    if (index < 0 || static_cast<i64>(index) > m_stack.size()) {
+                        return Trap::TRAP_ILLEGAL_INST_ACCESS;
+                    }
+                    f64 &value = m_stack.at(m_stack.size() - index - 1);
+                    if (static_cast<i64>(value) != value) {
+                        return Trap::TRAP_ILLEGAL_INST;
+                    }
+                    else {
+                        value = static_cast<f64>(static_cast<i64>(value) >> shift_amount);
+                        m_ip += 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        default:
             return Trap::TRAP_ILLEGAL_INST;
         }
-
-        if (const auto &label = std::get<std::string>(inst.operand); m_labels.has_value() && m_labels->find(label) != m_labels->end()) {
-            m_call_stack.emplace_back(m_ip + 1);  // Save the next instruction pointer
-            m_ip = (*m_labels)[label];  // Jump to the function
-        } else {
-            return Trap::TRAP_ILLEGAL_INST_ACCESS;
-        }
-        break;
-    }
-    case Inst_type::INST_PRINT_DEBUG:
-        if (m_stack.size() < 1) {
-            return Trap::TRAP_STACK_UNDERFLOW;
-        } else {
-            std::cout << m_stack.at(m_stack.size() - 1) << '\n';
-            m_stack.pop_back();
-            m_ip += 1;
-        }
-        break;
-        
-    case Inst_type::INST_HALT:
-        m_halt = 1;
-        break;
-        
-    default:
-        return Trap::TRAP_ILLEGAL_INST;
-    }
-    return Trap::TRAP_OK;
+        return Trap::TRAP_OK;
 }
 
 void VM::vm_load_program_from_memory(const std::vector<Instruction> &program) {
@@ -369,7 +475,6 @@ void VM::vm_save_program_to_file(const std::string &file_path) {
         auto type_val = static_cast<std::underlying_type_t<Inst_type>>(inst.type);
         file.write(reinterpret_cast<const char *>(&type_val), sizeof(type_val));
         file.write(reinterpret_cast<const char *>(&inst.operand), sizeof(inst.operand));
-
     }
     
     file.close();
@@ -551,7 +656,6 @@ void VM::vm_translate_asm() {
                 std::cerr << "Error: 'jmp_if' missing operand.\n";
                 exit(1);
             }
-            
             const std::string &operand = lines[i + 1];
             inst = Instruction{.type = Inst_type::INST_JMP_IF, .operand = operand};
             m_program.emplace_back(inst);
@@ -575,13 +679,58 @@ void VM::vm_translate_asm() {
             inst = inst_call(operand);
             m_program.emplace_back(inst);
             i += 1;
-        } else {
+        } else if (lines[i] == "xor") {
+            inst = inst_xor();
+            m_program.emplace_back(inst);
+        } else if (lines[i] == "and") {
+            inst = inst_and();
+            m_program.emplace_back(inst);
+        } else if (lines[i] == "or") {
+            inst = inst_or();
+            m_program.emplace_back(inst);
+        } else if (lines[i] == "shl") {
+            if (i + 1 >= lines.size()) {
+                std::cerr << "Error: 'shr' missing operand.\n";
+            } else {
+                const std::string &indx = lines[i + 1];
+                const std::string &value = lines[i + 2];
+                i64 i_val {}, v_val {};
+                try {
+                    i_val= std::stoi(indx);
+                    v_val = std::stoi(value);
+                } catch (const std::invalid_argument &e) {
+                    std::cerr << "Error: Invalid integer value for 'shr': " << e.what() << '\n';
+                    exit(1);
+                }
+                inst = inst_shl(i_val, v_val);
+                m_program.emplace_back(inst);
+                i += 2;
+            }
+        } else if (lines[i] == "shr") {
+            if (i + 1 >= lines.size()) {
+                std::cerr << "Error: 'shr' missing operand.\n";
+            } else {
+                const std::string &indx = lines[i + 1];
+                const std::string &value = lines[i + 2];
+                i64 i_val {}, v_val {};
+                try {
+                    i_val= std::stoi(indx);
+                    v_val = std::stoi(value);
+                } catch (const std::invalid_argument &e) {
+                    std::cerr << "Error: Invalid integer value for 'shr': " << e.what() << '\n';
+                    exit(1);
+                }
+                inst = inst_shr(i_val, v_val);
+                m_program.emplace_back(inst);
+                i += 2;
+            }
+        }
+        else {
             std::cerr << "Unknown instruction: " << lines[i] << '\n';
             exit(1);
         }
     }
 }
-
 
 void VM::vm_dump_stack() const {
     std::cout << "Stack:\n";

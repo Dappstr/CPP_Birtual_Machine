@@ -1,0 +1,42 @@
+; test_bitwise.asm
+; Purpose:
+;   Test bitwise operations: XOR, AND, OR, SHL, and SHR.
+;   Final expected stack (top at the end of program): [15, 14, 32]
+
+; Example usage of macros:
+# define SOME_MACRO 7
+
+; -- Test XOR --
+;   push 5  -> stack: [5]
+;   push 3  -> stack: [5, 3]
+;   xor     -> stack: [5 ^ 3 = 6]
+push 5
+push 3
+xor
+
+; -- Test AND --
+;   push 6  -> stack: [6, 6]
+;   and     -> stack: [6 & 6 = 6]
+push 6
+and
+
+; -- Test OR --
+;   push 13 -> stack: [6, 13]
+;   or      -> stack: [6 | 13 = 15]
+push 13
+or
+
+; -- Test SHL --
+;   push SOME_MACRO  -> stack: [15, 7]
+;   shl 0 1          -> shift top of the stack (7) left by 1 bit = 14
+push SOME_MACRO
+shl 0 1
+
+; -- Test SHR --
+;   push 128 -> stack: [15, 14, 128]
+;   shr 0 2  -> shift top (128) right by 2 bits = 32
+push 128
+shr 0 2
+
+; -- Done --
+halt
